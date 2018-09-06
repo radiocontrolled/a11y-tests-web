@@ -42,6 +42,27 @@ const EXPECTED_CUSTOM_LIGHTHOUSE_CONFIG = {
   settings: {
     onlyCategories: ['accessibility', 'seo', 'pwa', 'best-practices']
   },
+  thresholds: {
+    minimumScores:
+      [
+        {
+          name: 'Progressive Web App',
+          score: 54.54545454545455
+        },
+        {
+          name: 'Accessibility',
+          score: 100
+        },
+        {
+          name: 'Best Practices',
+          score: 87.5
+        },
+        {
+          name: 'SEO',
+          score: 87.5
+        }
+      ]
+  },
   categories: {
     accessibility: {
       weight: 1
