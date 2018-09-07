@@ -9,6 +9,7 @@ const sandbox = require('sinon').sandbox.create();
 const colourfulLog = require('../../lib/colourfulLog');
 const external = require('../../lib/external');
 const fakeResults = require('../fixtures/lighthouseReport');
+const fakeResultsFailingLighthouse = require('../fixtures/lighthouseReportFailingLighthouse');
 const lighthouseRunner = require('../../lib/lighthouse');
 
 function getMinifiedMatcher(code) {
@@ -38,6 +39,18 @@ const EXPECTED_LIGHTHOUSE_CONFIG = {
 };
 
 const EXPECTED_CUSTOM_LIGHTHOUSE_CONFIG = {
+  extends: 'lighthouse:default',
+  settings: {
+    onlyCategories: ['accessibility', 'seo', 'pwa', 'best-practices']
+  },
+  categories: {
+    accessibility: {
+      weight: 1
+    }
+  }
+};
+
+const EXPECTED_CUSTOM_LIGHTHOUSE_CONFIG_THRESHOLDS = {
   extends: 'lighthouse:default',
   settings: {
     onlyCategories: ['accessibility', 'seo', 'pwa', 'best-practices']
@@ -116,6 +129,7 @@ describe('lighthouse', () => {
     };
     sandbox.stub(external, 'CDP').resolves(fakeCDP);
     sandbox.stub(external, 'lighthouse').resolves(fakeResults);
+    sandbox.stub(external, 'lighthouseFailure').resolves(fakeResultsFailingLighthouse);
 
     fakeReportBuilderTestSuite = {
       name: sandbox.stub(),
@@ -348,7 +362,7 @@ describe('lighthouse', () => {
 
     describe('Custom Lighthouse config', () => {
       beforeEach(() => {
-        process.env.A11Y_CONFIG = 'test/paths-and-baseurl-and-custom-lighthouse.js';
+        process.env.A11Y_CONFIG = 'test/paths-and-baseurl-and-custom-lighthouse-with-no-thresholds.js';
       });
 
       it('launches lighthouse with the base url and path, flags and custom lighthouse config', () => {
@@ -361,6 +375,30 @@ describe('lighthouse', () => {
             EXPECTED_CUSTOM_LIGHTHOUSE_CONFIG
           );
         });
+      });
+
+      describe('Threshold testing', () => {
+        beforeEach(() => {
+          process.env.A11Y_CONFIG = 'test/paths-and-baseurl-and-custom-lighthouse-with-thresholds.js';
+        });
+
+        // there needs to be a test here which is based on a scenario where lighthouse runs, generates lighthouse-report.json
+        // and then the function outputFailingThresholdResults in lib/lighthouse.js finds there have been errors
+        // and exists
+        it('exits if lighthouse categories do not meet or exceed thresholds');
+
+        it('does not exit if tests pass thresholds', () => {
+          return lighthouseRunner.run().then(() => {
+            sandbox.assert.calledOnce(external.lighthouse);
+            sandbox.assert.calledWith(
+              external.lighthouse,
+              'http://base.url/path/1',
+              EXPECTED_LIGHTHOUSE_FLAGS,
+              EXPECTED_CUSTOM_LIGHTHOUSE_CONFIG_THRESHOLDS
+            );
+          });
+        });
+
       });
     });
 
